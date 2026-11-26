@@ -1,0 +1,31 @@
+﻿# Environment secrets
+**/.env
+**/.env.*
+!**/.env.example
+
+# Python
+**/.venv/
+**/venv/
+**/__pycache__/
+*.py[cod]
+**/.pytest_cache/
+
+# Node.js and build output
+**/node_modules/
+**/dist/
+**/build/
+
+# Private data and backups
+Backend/storage/
+Frontend/storage/
+Backend/backups/
+*.dump
+*.sqlite
+*.sqlite3
+*.db
+
+# IDE and OS files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
