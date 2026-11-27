@@ -544,7 +544,7 @@ export default function App() {
   const [chat, setChat] = useState([
     {
       who: "ai",
-      text: "مرحباً! أنا مساعد التدقيق الذكي. اسألني عن المخاطر أو الفواتير أو التسوية البنكية.",
+      text: "مرحباً! أنا مساعد التدقيق الذكي. اسألني عن المخاطر أو الفواتير .",
     },
   ]);
 
@@ -2149,8 +2149,16 @@ export default function App() {
             <div className="reports-page">
               <div className="heading reports-heading">
                 <div>
-                  <h1>{"\u0627\u0644\u062a\u0642\u0627\u0631\u064a\u0631 \u0648\u0627\u0644\u062a\u062d\u0644\u064a\u0644\u0627\u062a"}</h1>
-                  <p>{"\u0625\u0646\u0634\u0627\u0621 \u0627\u0644\u062a\u0642\u0627\u0631\u064a\u0631 \u0627\u0644\u0645\u0627\u0644\u064a\u0629 \u0645\u0646 \u0628\u064a\u0627\u0646\u0627\u062a \u0627\u0644\u0646\u0638\u0627\u0645."}</p>
+                  <h1>
+                    {
+                      "\u0627\u0644\u062a\u0642\u0627\u0631\u064a\u0631 \u0648\u0627\u0644\u062a\u062d\u0644\u064a\u0644\u0627\u062a"
+                    }
+                  </h1>
+                  <p>
+                    {
+                      "\u0625\u0646\u0634\u0627\u0621 \u0627\u0644\u062a\u0642\u0627\u0631\u064a\u0631 \u0627\u0644\u0645\u0627\u0644\u064a\u0629 \u0645\u0646 \u0628\u064a\u0627\u0646\u0627\u062a \u0627\u0644\u0646\u0638\u0627\u0645."
+                    }
+                  </p>
                 </div>
 
                 <button
@@ -2159,7 +2167,9 @@ export default function App() {
                   disabled={busy}
                 >
                   <Download size={16} />
-                  {"\u0625\u0646\u0634\u0627\u0621 \u062a\u0642\u0631\u064a\u0631"}
+                  {
+                    "\u0625\u0646\u0634\u0627\u0621 \u062a\u0642\u0631\u064a\u0631"
+                  }
                 </button>
               </div>
 
@@ -2176,7 +2186,8 @@ export default function App() {
                       <div key={report.id} className="report-card">
                         <div className="report-info">
                           <strong>
-                            {report.title || `\u0627\u0644\u062a\u0642\u0631\u064a\u0631 ${report.id}`}
+                            {report.title ||
+                              `\u0627\u0644\u062a\u0642\u0631\u064a\u0631 ${report.id}`}
                           </strong>
                           <div>
                             {
@@ -2402,8 +2413,14 @@ export default function App() {
             <div className="settings-page">
               <div className="heading settings-heading">
                 <div>
-                  <h1>{"\u0627\u0644\u0625\u0639\u062f\u0627\u062f\u0627\u062a"}</h1>
-                  <p>{"\u0625\u062f\u0627\u0631\u0629 \u0625\u0639\u062f\u0627\u062f\u0627\u062a \u0627\u0644\u0645\u0646\u0635\u0629 \u0648\u0645\u0639\u0644\u0648\u0645\u0627\u062a \u0627\u0644\u062e\u062f\u0645\u0627\u062a \u0627\u0644\u0645\u0631\u062a\u0628\u0637\u0629."}</p>
+                  <h1>
+                    {"\u0627\u0644\u0625\u0639\u062f\u0627\u062f\u0627\u062a"}
+                  </h1>
+                  <p>
+                    {
+                      "\u0625\u062f\u0627\u0631\u0629 \u0625\u0639\u062f\u0627\u062f\u0627\u062a \u0627\u0644\u0645\u0646\u0635\u0629 \u0648\u0645\u0639\u0644\u0648\u0645\u0627\u062a \u0627\u0644\u062e\u062f\u0645\u0627\u062a \u0627\u0644\u0645\u0631\u062a\u0628\u0637\u0629."
+                    }
+                  </p>
                 </div>
                 <div className="settings-heading-icon">
                   <Settings size={22} />
@@ -2416,9 +2433,17 @@ export default function App() {
                     <Server size={19} />
                   </span>
                   <div>
-                    <small>{"\u062e\u062f\u0645\u0629 \u0627\u0644\u062e\u0627\u062f\u0645"}</small>
+                    <small>
+                      {
+                        "\u062e\u062f\u0645\u0629 \u0627\u0644\u062e\u0627\u062f\u0645"
+                      }
+                    </small>
                     <strong>Python + FastAPI</strong>
-                    <span>{"\u0627\u0644\u062e\u0644\u0641\u064a\u0629 \u0627\u0644\u0628\u0631\u0645\u062c\u064a\u0629"}</span>
+                    <span>
+                      {
+                        "\u0627\u0644\u062e\u0644\u0641\u064a\u0629 \u0627\u0644\u0628\u0631\u0645\u062c\u064a\u0629"
+                      }
+                    </span>
                   </div>
                 </div>
 
@@ -2427,9 +2452,17 @@ export default function App() {
                     <Database size={19} />
                   </span>
                   <div>
-                    <small>{"\u0642\u0627\u0639\u062f\u0629 \u0627\u0644\u0628\u064a\u0627\u0646\u0627\u062a"}</small>
+                    <small>
+                      {
+                        "\u0642\u0627\u0639\u062f\u0629 \u0627\u0644\u0628\u064a\u0627\u0646\u0627\u062a"
+                      }
+                    </small>
                     <strong>PostgreSQL</strong>
-                    <span>{"\u062a\u062e\u0632\u064a\u0646 \u0628\u064a\u0627\u0646\u0627\u062a \u0627\u0644\u0646\u0638\u0627\u0645"}</span>
+                    <span>
+                      {
+                        "\u062a\u062e\u0632\u064a\u0646 \u0628\u064a\u0627\u0646\u0627\u062a \u0627\u0644\u0646\u0638\u0627\u0645"
+                      }
+                    </span>
                   </div>
                 </div>
 
@@ -2438,17 +2471,33 @@ export default function App() {
                     <ShieldCheck size={19} />
                   </span>
                   <div>
-                    <small>{"\u0646\u0645\u0637 \u0627\u0644\u0627\u062a\u0635\u0627\u0644"}</small>
+                    <small>
+                      {
+                        "\u0646\u0645\u0637 \u0627\u0644\u0627\u062a\u0635\u0627\u0644"
+                      }
+                    </small>
                     <strong>API</strong>
-                    <span>{"\u0627\u0644\u0648\u0635\u0648\u0644 \u0639\u0628\u0631 \u0627\u0644\u0648\u0627\u062c\u0647\u0629 \u0627\u0644\u0628\u0631\u0645\u062c\u064a\u0629"}</span>
+                    <span>
+                      {
+                        "\u0627\u0644\u0648\u0635\u0648\u0644 \u0639\u0628\u0631 \u0627\u0644\u0648\u0627\u062c\u0647\u0629 \u0627\u0644\u0628\u0631\u0645\u062c\u064a\u0629"
+                      }
+                    </span>
                   </div>
                 </div>
               </div>
 
               <div className="settings-section-title">
                 <div>
-                  <h2>{"\u0628\u064a\u0626\u0629 \u0627\u0644\u062a\u0634\u063a\u064a\u0644"}</h2>
-                  <p>{"\u0645\u0639\u0644\u0648\u0645\u0627\u062a \u0627\u0644\u062e\u062f\u0645\u0627\u062a \u0627\u0644\u0645\u0633\u062a\u062e\u062f\u0645\u0629 \u0641\u064a \u0627\u0644\u0645\u0646\u0635\u0629."}</p>
+                  <h2>
+                    {
+                      "\u0628\u064a\u0626\u0629 \u0627\u0644\u062a\u0634\u063a\u064a\u0644"
+                    }
+                  </h2>
+                  <p>
+                    {
+                      "\u0645\u0639\u0644\u0648\u0645\u0627\u062a \u0627\u0644\u062e\u062f\u0645\u0627\u062a \u0627\u0644\u0645\u0633\u062a\u062e\u062f\u0645\u0629 \u0641\u064a \u0627\u0644\u0645\u0646\u0635\u0629."
+                    }
+                  </p>
                 </div>
               </div>
 
@@ -2459,8 +2508,16 @@ export default function App() {
                       <Server size={20} />
                     </span>
                     <div>
-                      <h3>{"\u0627\u0644\u0627\u062a\u0635\u0627\u0644 \u0628\u0627\u0644\u062e\u0627\u062f\u0645"}</h3>
-                      <p>{"\u0625\u0639\u062f\u0627\u062f\u0627\u062a \u0627\u0644\u0648\u0627\u062c\u0647\u0629 \u0627\u0644\u062e\u0644\u0641\u064a\u0629"}</p>
+                      <h3>
+                        {
+                          "\u0627\u0644\u0627\u062a\u0635\u0627\u0644 \u0628\u0627\u0644\u062e\u0627\u062f\u0645"
+                        }
+                      </h3>
+                      <p>
+                        {
+                          "\u0625\u0639\u062f\u0627\u062f\u0627\u062a \u0627\u0644\u0648\u0627\u062c\u0647\u0629 \u0627\u0644\u062e\u0644\u0641\u064a\u0629"
+                        }
+                      </p>
                     </div>
                   </div>
 
@@ -2471,12 +2528,22 @@ export default function App() {
 
                   <div className="settings-detail-row settings-api-row">
                     <span>{"\u0639\u0646\u0648\u0627\u0646 API"}</span>
-                    <code>{import.meta.env.VITE_API_BASE_URL || "??? ????"}</code>
+                    <code>
+                      {import.meta.env.VITE_API_BASE_URL || "??? ????"}
+                    </code>
                   </div>
 
                   <div className="settings-card-footer">
-                    <Tag t="green">{"\u0627\u0644\u0627\u062a\u0635\u0627\u0644 \u0639\u0628\u0631 API"}</Tag>
-                    <span>{"\u0645\u0639\u0644\u0648\u0645\u0627\u062a \u0627\u0644\u0625\u0639\u062f\u0627\u062f \u0627\u0644\u062d\u0627\u0644\u064a\u0629"}</span>
+                    <Tag t="green">
+                      {
+                        "\u0627\u0644\u0627\u062a\u0635\u0627\u0644 \u0639\u0628\u0631 API"
+                      }
+                    </Tag>
+                    <span>
+                      {
+                        "\u0645\u0639\u0644\u0648\u0645\u0627\u062a \u0627\u0644\u0625\u0639\u062f\u0627\u062f \u0627\u0644\u062d\u0627\u0644\u064a\u0629"
+                      }
+                    </span>
                   </div>
                 </section>
 
@@ -2486,24 +2553,50 @@ export default function App() {
                       <Database size={20} />
                     </span>
                     <div>
-                      <h3>{"\u0642\u0627\u0639\u062f\u0629 \u0627\u0644\u0628\u064a\u0627\u0646\u0627\u062a"}</h3>
-                      <p>{"\u0645\u0635\u062f\u0631 \u062a\u062e\u0632\u064a\u0646 \u0628\u064a\u0627\u0646\u0627\u062a \u0627\u0644\u0646\u0638\u0627\u0645"}</p>
+                      <h3>
+                        {
+                          "\u0642\u0627\u0639\u062f\u0629 \u0627\u0644\u0628\u064a\u0627\u0646\u0627\u062a"
+                        }
+                      </h3>
+                      <p>
+                        {
+                          "\u0645\u0635\u062f\u0631 \u062a\u062e\u0632\u064a\u0646 \u0628\u064a\u0627\u0646\u0627\u062a \u0627\u0644\u0646\u0638\u0627\u0645"
+                        }
+                      </p>
                     </div>
                   </div>
 
                   <div className="settings-detail-row">
-                    <span>{"\u0646\u0648\u0639 \u0642\u0627\u0639\u062f\u0629 \u0627\u0644\u0628\u064a\u0627\u0646\u0627\u062a"}</span>
+                    <span>
+                      {
+                        "\u0646\u0648\u0639 \u0642\u0627\u0639\u062f\u0629 \u0627\u0644\u0628\u064a\u0627\u0646\u0627\u062a"
+                      }
+                    </span>
                     <strong>PostgreSQL</strong>
                   </div>
 
                   <div className="settings-detail-row">
-                    <span>{"\u0637\u0631\u064a\u0642\u0629 \u0627\u0644\u0627\u062a\u0635\u0627\u0644"}</span>
-                    <strong>{"\u0639\u0628\u0631 \u062e\u062f\u0645\u0629 Backend"}</strong>
+                    <span>
+                      {
+                        "\u0637\u0631\u064a\u0642\u0629 \u0627\u0644\u0627\u062a\u0635\u0627\u0644"
+                      }
+                    </span>
+                    <strong>
+                      {"\u0639\u0628\u0631 \u062e\u062f\u0645\u0629 Backend"}
+                    </strong>
                   </div>
 
                   <div className="settings-card-footer">
-                    <Tag t="green">{"\u0645\u0639\u0632\u0648\u0644\u0629 \u0639\u0646 \u0627\u0644\u0648\u0627\u062c\u0647\u0629"}</Tag>
-                    <span>{"\u0627\u0644\u0648\u0627\u062c\u0647\u0629 \u0644\u0627 \u062a\u062a\u0635\u0644 \u0645\u0628\u0627\u0634\u0631\u0629\u064b \u0628\u0627\u0644\u0642\u0627\u0639\u062f\u0629"}</span>
+                    <Tag t="green">
+                      {
+                        "\u0645\u0639\u0632\u0648\u0644\u0629 \u0639\u0646 \u0627\u0644\u0648\u0627\u062c\u0647\u0629"
+                      }
+                    </Tag>
+                    <span>
+                      {
+                        "\u0627\u0644\u0648\u0627\u062c\u0647\u0629 \u0644\u0627 \u062a\u062a\u0635\u0644 \u0645\u0628\u0627\u0634\u0631\u0629\u064b \u0628\u0627\u0644\u0642\u0627\u0639\u062f\u0629"
+                      }
+                    </span>
                   </div>
                 </section>
               </div>
@@ -2511,8 +2604,16 @@ export default function App() {
               <div className="settings-note">
                 <ShieldCheck size={19} />
                 <div>
-                  <strong>{"\u0645\u0644\u0627\u062d\u0638\u0629 \u0623\u0645\u0627\u0646"}</strong>
-                  <p>{"\u062a\u0639\u062f\u064a\u0644 \u0625\u0639\u062f\u0627\u062f\u0627\u062a \u0627\u0644\u062e\u0627\u062f\u0645 \u0648\u0642\u0627\u0639\u062f\u0629 \u0627\u0644\u0628\u064a\u0627\u0646\u0627\u062a \u064a\u062a\u0645 \u0645\u0646 \u062e\u0644\u0627\u0644 \u0628\u064a\u0626\u0629 \u0627\u0644\u062e\u0627\u062f\u0645\u060c \u0648\u0644\u064a\u0633 \u0645\u0646 \u0647\u0630\u0647 \u0627\u0644\u0635\u0641\u062d\u0629."}</p>
+                  <strong>
+                    {
+                      "\u0645\u0644\u0627\u062d\u0638\u0629 \u0623\u0645\u0627\u0646"
+                    }
+                  </strong>
+                  <p>
+                    {
+                      "\u062a\u0639\u062f\u064a\u0644 \u0625\u0639\u062f\u0627\u062f\u0627\u062a \u0627\u0644\u062e\u0627\u062f\u0645 \u0648\u0642\u0627\u0639\u062f\u0629 \u0627\u0644\u0628\u064a\u0627\u0646\u0627\u062a \u064a\u062a\u0645 \u0645\u0646 \u062e\u0644\u0627\u0644 \u0628\u064a\u0626\u0629 \u0627\u0644\u062e\u0627\u062f\u0645\u060c \u0648\u0644\u064a\u0633 \u0645\u0646 \u0647\u0630\u0647 \u0627\u0644\u0635\u0641\u062d\u0629."
+                    }
+                  </p>
                 </div>
               </div>
             </div>

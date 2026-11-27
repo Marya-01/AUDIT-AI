@@ -1200,7 +1200,7 @@ def fallback_answer(context: dict):
         "ملخص قاعدة البيانات الحالية:\n"
         f"- عدد الفواتير: "
         f"{summary.get('invoice_count', 0)}\n"
-        f"- عدد المعاملات البنكية: "
+        f"- عدد المعاملات : "
         f"{summary.get('transaction_count', 0)}\n"
         f"- عدد ملاحظات التدقيق: "
         f"{summary.get('findings_count', 0)}\n"

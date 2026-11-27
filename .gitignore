@@ -29,3 +29,6 @@ Backend/backups/
 .idea/
 .DS_Store
 Thumbs.db
+
+# Root-level private storage
+/storage/
