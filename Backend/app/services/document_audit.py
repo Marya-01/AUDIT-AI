@@ -1,4 +1,4 @@
-﻿
+
 from collections import defaultdict
 from pathlib import Path
 from decimal import Decimal, InvalidOperation
@@ -9,6 +9,7 @@ from .invoice_extractor import (
     extract_tabular_records,
     extract_ledger_records,
     extract_journal_records,
+    extract_expense_register_records,
     extract_pdf_pages,
     extract_invoice_number,
     extract_supplier_name,
@@ -226,6 +227,132 @@ def _audit_invoice_records(records):
 
     return findings
 
+
+
+
+def _audit_expense_register_records(records):
+    findings = []
+    valid_records = [r for r in records if r.get("is_valid")]
+
+    duplicate_groups = defaultdict(list)
+    for record in valid_records:
+        key = (
+            _normalize_invoice_number(record.get("invoice_number")),
+            _normalize_value(record.get("beneficiary")),
+            _normalize_amount(record.get("amount")),
+        )
+        if all(key):
+            duplicate_groups[key].append(record)
+
+    for group in duplicate_groups.values():
+        if len(group) < 2:
+            continue
+        findings.append(_make_finding(
+            title="\u0627\u062d\u062a\u0645\u0627\u0644 \u062a\u0643\u0631\u0627\u0631 \u0641\u0627\u062a\u0648\u0631\u0629 \u0623\u0648 \u0642\u064a\u062f \u0645\u0635\u0631\u0648\u0641",
+            category="\u062a\u0643\u0631\u0627\u0631 \u0627\u0644\u0645\u0639\u0627\u0645\u0644\u0627\u062a",
+            description="\u062a\u0643\u0631\u0631 \u0631\u0642\u0645 \u0627\u0644\u0641\u0627\u062a\u0648\u0631\u0629 \u0644\u0644\u0645\u0633\u062a\u0641\u064a\u062f \u0646\u0641\u0633\u0647 \u0648\u0628\u0627\u0644\u0645\u0628\u0644\u063a \u0646\u0641\u0633\u0647\u061b \u064a\u0644\u0632\u0645 \u0627\u0644\u062a\u062d\u0642\u0642 \u0645\u0646 \u0648\u062c\u0648\u062f \u0635\u0631\u0641 \u0645\u0643\u0631\u0631.",
+            evidence=(
+                f"\u0631\u0642\u0645 \u0627\u0644\u0641\u0627\u062a\u0648\u0631\u0629: {group[0].get('invoice_number')}\n"
+                f"\u0639\u062f\u062f \u0627\u0644\u0633\u062c\u0644\u0627\u062a: {len(group)}\n"
+                + "\n".join(_location(r) for r in group)
+            ),
+            recommendation="\u0631\u0627\u062c\u0639 \u0623\u0635\u0644 \u0627\u0644\u0641\u0627\u062a\u0648\u0631\u0629 \u0648\u0625\u062b\u0628\u0627\u062a\u0627\u062a \u0627\u0644\u062f\u0641\u0639\u060c \u0648\u062a\u0623\u0643\u062f \u0645\u0646 \u0639\u062f\u0645 \u0635\u0631\u0641 \u0627\u0644\u0627\u0644\u062a\u0632\u0627\u0645 \u0645\u0631\u062a\u064a\u0646.",
+            risk_level="\u0645\u0631\u062a\u0641\u0639",
+            score=40,
+            occurrence_count=len(group) - 1,
+        ))
+
+    self_approved = [
+        r for r in valid_records
+        if _normalize_value(r.get("entered_by"))
+        and _normalize_value(r.get("approved_by"))
+        and _normalize_value(r.get("entered_by")) == _normalize_value(r.get("approved_by"))
+    ]
+    if self_approved:
+        findings.append(_make_finding(
+            title="\u0627\u0639\u062a\u0645\u0627\u062f \u0627\u0644\u0645\u0648\u0638\u0641 \u0644\u0644\u0642\u064a\u0648\u062f \u0627\u0644\u062a\u064a \u0623\u062f\u062e\u0644\u0647\u0627 \u0628\u0646\u0641\u0633\u0647",
+            category="\u0641\u0635\u0644 \u0627\u0644\u0645\u0647\u0627\u0645 \u0648\u0627\u0644\u0635\u0644\u0627\u062d\u064a\u0627\u062a",
+            description="\u062a\u0648\u062c\u062f \u0642\u064a\u0648\u062f \u064a\u062a\u0637\u0627\u0628\u0642 \u0641\u064a\u0647\u0627 \u0627\u0644\u0645\u0648\u0638\u0641 \u0627\u0644\u0645\u062f\u062e\u0644 \u0645\u0639 \u0627\u0644\u0645\u0639\u062a\u0645\u062f\u060c \u0645\u0645\u0627 \u0642\u062f \u064a\u0634\u064a\u0631 \u0625\u0644\u0649 \u063a\u064a\u0627\u0628 \u0641\u0635\u0644 \u0627\u0644\u0645\u0647\u0627\u0645.",
+            evidence=f"\u0639\u062f\u062f \u0627\u0644\u0642\u064a\u0648\u062f: {len(self_approved)}\n" + "\n".join(_location(r) for r in self_approved),
+            recommendation="\u0627\u0634\u062a\u0631\u0637 \u0627\u0639\u062a\u0645\u0627\u062f\u064b\u0627 \u0645\u0633\u062a\u0642\u0644\u064b\u0627 \u0645\u0646 \u0645\u0648\u0638\u0641 \u0645\u062e\u0648\u0644.",
+            risk_level="\u0645\u0631\u062a\u0641\u0639",
+            score=40,
+            occurrence_count=len(self_approved),
+        ))
+
+    iban_groups = defaultdict(list)
+    for record in valid_records:
+        iban = re.sub(r"[\s-]", "", str(record.get("iban") or "")).upper()
+        if iban:
+            iban_groups[iban].append(record)
+
+    for iban, group in iban_groups.items():
+        beneficiaries = {
+            _normalize_value(r.get("beneficiary"))
+            for r in group if _normalize_value(r.get("beneficiary"))
+        }
+        if len(beneficiaries) < 2:
+            continue
+        findings.append(_make_finding(
+            title="\u0627\u0633\u062a\u062e\u062f\u0627\u0645 \u062d\u0633\u0627\u0628 \u0628\u0646\u0643\u064a \u0648\u0627\u062d\u062f \u0644\u0645\u0633\u062a\u0641\u064a\u062f\u064a\u0646 \u0645\u062e\u062a\u0644\u0641\u064a\u0646",
+            category="\u0645\u062e\u0627\u0637\u0631 \u0627\u0644\u0645\u0633\u062a\u0641\u064a\u062f \u0648\u0627\u0644\u062d\u0633\u0627\u0628 \u0627\u0644\u0628\u0646\u0643\u064a",
+            description="\u0638\u0647\u0631 \u0631\u0642\u0645 \u0627\u0644\u062d\u0633\u0627\u0628 \u0646\u0641\u0633\u0647 \u0645\u0631\u062a\u0628\u0637\u064b\u0627 \u0628\u0623\u0633\u0645\u0627\u0621 \u0645\u0633\u062a\u0641\u064a\u062f\u064a\u0646 \u0645\u062e\u062a\u0644\u0641\u064a\u0646\u061b \u064a\u062a\u0637\u0644\u0628 \u0627\u0644\u062a\u062d\u0642\u0642.",
+            evidence=f"\u0627\u0644\u062d\u0633\u0627\u0628: ****{iban[-4:]}\n\u0639\u062f\u062f \u0627\u0644\u0645\u0633\u062a\u0641\u064a\u062f\u064a\u0646: {len(beneficiaries)}\n" + "\n".join(_location(r) for r in group),
+            recommendation="\u062a\u062d\u0642\u0642 \u0645\u0646 \u0645\u0644\u0643\u064a\u0629 \u0627\u0644\u062d\u0633\u0627\u0628 \u0645\u0646 \u0645\u0635\u062f\u0631 \u0645\u0635\u0631\u0641\u064a \u0645\u0633\u062a\u0642\u0644.",
+            risk_level="\u0645\u062a\u0648\u0633\u0637",
+            score=25,
+            occurrence_count=len(group),
+        ))
+
+    invalid_iban = []
+    for record in valid_records:
+        iban = re.sub(r"[\s-]", "", str(record.get("iban") or "")).upper()
+        if not iban.startswith("SA"):
+            continue
+        valid_format = bool(re.fullmatch(r"SA\d{22}", iban))
+        checksum_valid = False
+        if valid_format:
+            rearranged = iban[4:] + iban[:4]
+            numeric = "".join(
+                str(ord(c) - 55) if c.isalpha() else c for c in rearranged
+            )
+            checksum_valid = int(numeric) % 97 == 1
+        if not valid_format or not checksum_valid:
+            invalid_iban.append(record)
+
+    if invalid_iban:
+        findings.append(_make_finding(
+            title="\u0623\u0631\u0642\u0627\u0645 IBAN \u0633\u0639\u0648\u062f\u064a\u0629 \u063a\u064a\u0631 \u0645\u0637\u0627\u0628\u0642\u0629 \u0644\u0644\u0635\u064a\u063a\u0629 \u0623\u0648 \u0627\u0644\u062a\u062d\u0642\u0642",
+            category="\u0633\u0644\u0627\u0645\u0629 \u0628\u064a\u0627\u0646\u0627\u062a \u0627\u0644\u062d\u0633\u0627\u0628\u0627\u062a \u0627\u0644\u0628\u0646\u0643\u064a\u0629",
+            description="\u0628\u0639\u0636 \u0623\u0631\u0642\u0627\u0645 \u0627\u0644\u062d\u0633\u0627\u0628\u0627\u062a \u0644\u0627 \u062a\u062d\u0642\u0642 \u0637\u0648\u0644 IBAN \u0627\u0644\u0633\u0639\u0648\u062f\u064a \u0623\u0648 \u0627\u062e\u062a\u0628\u0627\u0631 MOD-97.",
+            evidence=f"\u0639\u062f\u062f \u0627\u0644\u0633\u062c\u0644\u0627\u062a \u0627\u0644\u0645\u062a\u0623\u062b\u0631\u0629: {len(invalid_iban)}\n" + "\n".join(f"{_location(r)}: ****{str(r.get('iban') or '')[-4:]}" for r in invalid_iban),
+            recommendation="\u0637\u0627\u0628\u0642 \u0631\u0642\u0645 IBAN \u0645\u0639 \u0645\u0635\u062f\u0631 \u0645\u0635\u0631\u0641\u064a \u0645\u0648\u062b\u0648\u0642.",
+            risk_level="\u0645\u062a\u0648\u0633\u0637",
+            score=25,
+            occurrence_count=len(invalid_iban),
+        ))
+
+    late_records = []
+    for record in valid_records:
+        match = re.search(r"(?<!\d)(\d{1,2}):(\d{2})(?!\d)", str(record.get("entry_time") or ""))
+        if match:
+            hour = int(match.group(1))
+            if hour < 6 or hour >= 22:
+                late_records.append(record)
+
+    if late_records:
+        findings.append(_make_finding(
+            title="\u0625\u062f\u062e\u0627\u0644 \u0642\u064a\u0648\u062f \u0641\u064a \u0623\u0648\u0642\u0627\u062a \u0644\u064a\u0644\u064a\u0629 \u063a\u064a\u0631 \u0645\u0639\u062a\u0627\u062f\u0629",
+            category="\u0645\u062e\u0627\u0637\u0631 \u0627\u0644\u062a\u0648\u0642\u064a\u062a \u0648\u0627\u0644\u0631\u0642\u0627\u0628\u0629",
+            description="\u0631\u064f\u0635\u062f\u062a \u0642\u064a\u0648\u062f \u0623\u064f\u062f\u062e\u0644\u062a \u0628\u064a\u0646 22:00 \u0648 05:59.",
+            evidence=f"\u0639\u062f\u062f \u0627\u0644\u0642\u064a\u0648\u062f: {len(late_records)}\n" + "\n".join(f"{_location(r)}? \u0627\u0644\u0648\u0642\u062a: {r.get('entry_time')}" for r in late_records),
+            recommendation="\u062a\u062d\u0642\u0642 \u0645\u0646 \u0633\u062c\u0644 \u0627\u0644\u0646\u0638\u0627\u0645 \u0648\u0648\u062c\u0648\u062f \u062a\u0641\u0648\u064a\u0636 \u0644\u0644\u0639\u0645\u0644 \u062e\u0627\u0631\u062c \u0633\u0627\u0639\u0627\u062a \u0627\u0644\u062f\u0648\u0627\u0645.",
+            risk_level="\u0645\u062a\u0648\u0633\u0637",
+            score=15,
+            occurrence_count=len(late_records),
+        ))
+
+    return findings
 
 def _audit_ledger_records(records):
     """\u062a\u062f\u0642\u064a\u0642 \u0627\u0644\u0642\u064a\u0648\u062f \u0627\u0644\u0645\u062d\u0627\u0633\u0628\u064a\u0629 \u0648\u0627\u0644\u062d\u0631\u0643\u0627\u062a \u0627\u0644\u0628\u0646\u0643\u064a\u0629."""
@@ -682,27 +809,42 @@ def audit_document(file_path: str | Path) -> dict:
     findings = []
 
     if extension in {".xlsx", ".xls", ".csv"}:
-        ledger_records = []
+        expense_records = []
 
         try:
-            ledger_records = extract_journal_records(file_path)
+            expense_records = extract_expense_register_records(file_path)
         except (ValueError, KeyError, TypeError):
-            ledger_records = []
+            expense_records = []
 
-        if ledger_records:
+        if expense_records:
             records = [
-                record for record in ledger_records
+                record for record in expense_records
                 if record.get("is_valid")
             ]
-            findings = _audit_ledger_records(ledger_records)
+            findings = _audit_expense_register_records(expense_records)
 
         else:
-            try:
-                records = extract_tabular_records(file_path)
-            except Exception:
-                records = []
+            ledger_records = []
 
-            findings = _audit_invoice_records(records)
+            try:
+                ledger_records = extract_journal_records(file_path)
+            except (ValueError, KeyError, TypeError):
+                ledger_records = []
+
+            if ledger_records:
+                records = [
+                    record for record in ledger_records
+                    if record.get("is_valid")
+                ]
+                findings = _audit_ledger_records(ledger_records)
+
+            else:
+                try:
+                    records = extract_tabular_records(file_path)
+                except Exception:
+                    records = []
+
+                findings = _audit_invoice_records(records)
 
         if extension in {".xlsx", ".xls"} and _has_populated_audit_notes(file_path):
             findings.extend(_audit_multisheet_workbook(file_path))
@@ -979,6 +1121,285 @@ def _comparison_match(first, second, record_type):
         }
 
     return None
+
+
+
+
+
+def _reconciliation_label(value):
+    value = normalize_text(str(value or "")).casefold()
+    value = re.sub(r"[\u064b-\u065f]", "", value)
+    return re.sub(r"[^\w]", "", value)
+
+
+def _reconciliation_amount(value):
+    if value is None:
+        return None
+
+    text = normalize_text(str(value))
+    text = text.replace(",", "").replace("\u066c", "").replace("\u066b", ".")
+    text = re.sub(r"[^\d.\-]", "", text)
+
+    if not text:
+        return None
+
+    try:
+        return Decimal(text)
+    except InvalidOperation:
+        return None
+
+
+def _read_reconciliation_document(file_path):
+    file_path = Path(file_path)
+    extension = file_path.suffix.lower()
+
+    if extension == ".csv":
+        try:
+            frame = pd.read_csv(
+                file_path, header=None, dtype=str,
+                encoding="utf-8-sig", sep=None, engine="python"
+            ).fillna("")
+        except Exception:
+            frame = pd.read_csv(
+                file_path, header=None, dtype=str, encoding="cp1252"
+            ).fillna("")
+        sheets = {"CSV": frame}
+    elif extension in {".xlsx", ".xls"}:
+        sheets = pd.read_excel(
+            file_path, sheet_name=None, header=None, dtype=str
+        )
+        sheets = {name: frame.fillna("") for name, frame in sheets.items()}
+    else:
+        return None
+
+    bank_aliases = {
+        "reference": {"\u0627\u0644\u0645\u0631\u062c\u0639\u0627\u0644\u0628\u0646\u0643\u064a"},
+        "date": {"\u062a\u0627\u0631\u064a\u062e\u0627\u0644\u062a\u0646\u0641\u064a\u0630"},
+        "description": {"\u0627\u0644\u062c\u0647\u0629\u0627\u0644\u0645\u0633\u062a\u0641\u064a\u062f\u0629"},
+        "amount": {"\u0627\u0644\u0645\u0628\u0644\u063a\u0627\u0644\u0645\u062e\u0635\u0648\u0645"},
+        "record_id": {"\u0631\u0642\u0645\u0627\u0644\u0639\u0645\u0644\u064a\u0629\u0627\u0644\u0628\u0646\u0643\u064a\u0629"},
+        "status": {"\u062d\u0627\u0644\u0629\u0627\u0644\u0639\u0645\u0644\u064a\u0629"},
+    }
+    ledger_aliases = {
+        "reference": {"\u0631\u0642\u0645\u0627\u0644\u0645\u0631\u062c\u0639\u0627\u0644\u0641\u0627\u062a\u0648\u0631\u0629"},
+        "date": {"\u0627\u0644\u062a\u0627\u0631\u064a\u062e"},
+        "description": {
+            "\u0627\u0633\u0645\u0627\u0644\u0645\u0648\u0631\u062f\u0627\u0644\u062c\u0647\u0629",
+            "\u0627\u0644\u0628\u064a\u0627\u0646\u0627\u0644\u0648\u0635\u0641",
+        },
+        "amount": {"\u0627\u0644\u0645\u0628\u0644\u063a\u0627\u0644\u0645\u0633\u062c\u0644"},
+        "record_id": {"\u0631\u0642\u0645\u0627\u0644\u0642\u064a\u062f"},
+        "status": {"\u062d\u0627\u0644\u0629\u0627\u0644\u0627\u0639\u062a\u0645\u0627\u062f"},
+    }
+
+    documents = []
+
+    for sheet_name, frame in sheets.items():
+        if frame.empty:
+            continue
+
+        header_index = None
+        columns = None
+        role = None
+
+        for row_index in range(min(30, len(frame))):
+            labels = [
+                _reconciliation_label(value)
+                for value in frame.iloc[row_index].tolist()
+            ]
+
+            for candidate_role, aliases in (
+                ("bank", bank_aliases),
+                ("ledger", ledger_aliases),
+            ):
+                mapping = {}
+                for field, accepted in aliases.items():
+                    for column_index, label in enumerate(labels):
+                        if label in accepted:
+                            mapping[field] = column_index
+                            break
+
+                if {"reference", "date", "amount", "record_id"}.issubset(mapping):
+                    header_index = row_index
+                    columns = mapping
+                    role = candidate_role
+                    break
+
+            if role:
+                break
+
+        if role is None:
+            continue
+
+        records = []
+        for row_index in range(header_index + 1, len(frame)):
+            row = frame.iloc[row_index]
+
+            def cell(field):
+                index = columns.get(field)
+                if index is None or index >= len(row):
+                    return ""
+                value = row.iloc[index]
+                return str(value).strip() if value is not None else ""
+
+            reference = cell("reference")
+            amount = _reconciliation_amount(cell("amount"))
+
+            if not reference or amount is None:
+                continue
+
+            records.append({
+                "reference": reference,
+                "normalized_reference": _normalize_invoice_number(reference),
+                "date": cell("date"),
+                "description": cell("description"),
+                "amount": amount,
+                "record_id": cell("record_id"),
+                "status": cell("status"),
+                "source_sheet": str(sheet_name),
+                "source_row": int(row_index + 1),
+            })
+
+        if records:
+            documents.append({"role": role, "records": records})
+
+    roles = {item["role"] for item in documents}
+    if len(roles) != 1:
+        return None
+
+    combined = []
+    for item in documents:
+        combined.extend(item["records"])
+
+    return next(iter(roles)), combined
+
+
+def _reconciliation_record_output(record):
+    result = dict(record)
+    result["amount"] = float(record["amount"])
+    result["location"] = _location(record)
+    return result
+
+
+def reconcile_uploaded_documents(first_path, second_path):
+    """Reconcile uploaded bank statement and ledger files without database writes."""
+    first = _read_reconciliation_document(first_path)
+    second = _read_reconciliation_document(second_path)
+
+    if first is None or second is None or first[0] == second[0]:
+        return None
+
+    bank_records = first[1] if first[0] == "bank" else second[1]
+    ledger_records = first[1] if first[0] == "ledger" else second[1]
+
+    if not bank_records or not ledger_records:
+        return None
+
+    ledger_by_reference = defaultdict(list)
+    for index, record in enumerate(ledger_records):
+        ledger_by_reference[record["normalized_reference"]].append((index, record))
+
+    used_ledger_ids = set()
+    matched_bank_ids = set()
+    matches = []
+    duplicates = []
+    variances = []
+
+    for bank_index, bank in enumerate(bank_records):
+        reference = bank["normalized_reference"]
+        candidates = [
+            item for item in ledger_by_reference.get(reference, [])
+            if item[0] not in used_ledger_ids
+        ]
+
+        if not candidates:
+            continue
+
+        exact = [
+            item for item in candidates
+            if item[1]["amount"] == bank["amount"]
+        ]
+        chosen_index, chosen = exact[0] if exact else candidates[0]
+
+        used_ledger_ids.add(chosen_index)
+        matched_bank_ids.add(bank_index)
+
+        if chosen["amount"] == bank["amount"]:
+            matches.append({
+                "match_id": len(matches) + 1,
+                "match_type": "\u062a\u0637\u0627\u0628\u0642\u062a\u0627\u0645",
+                "matched_value": reference,
+                "bank_record": _reconciliation_record_output(bank),
+                "ledger_record": _reconciliation_record_output(chosen),
+            })
+        else:
+            difference = chosen["amount"] - bank["amount"]
+            variances.append({
+                "finding_id": len(variances) + 1,
+                "reference": bank["reference"],
+                "difference": float(difference),
+                "severity": "high",
+                "message": "\u0627\u062e\u062a\u0644\u0627\u0641\u0641\u064a\u0645\u0628\u0644\u063a\u0627\u0644\u0642\u064a\u062f\u0648\u0627\u0644\u062d\u0631\u0643\u0629\u0627\u0644\u0628\u0646\u0643\u064a\u0629",
+                "bank_record": _reconciliation_record_output(bank),
+                "ledger_record": _reconciliation_record_output(chosen),
+            })
+
+        for duplicate_index, duplicate in candidates:
+            if duplicate_index == chosen_index:
+                continue
+            used_ledger_ids.add(duplicate_index)
+            duplicates.append({
+                "finding_id": len(duplicates) + 1,
+                "reference": duplicate["reference"],
+                "severity": "high",
+                "message": "\u0642\u064a\u062f\u0645\u062d\u0627\u0633\u0628\u064a\u0625\u0636\u0627\u0641\u064a\u0644\u0646\u0641\u0633\u0627\u0644\u0645\u0631\u062c\u0639",
+                "bank_record": _reconciliation_record_output(bank),
+                "ledger_record": _reconciliation_record_output(duplicate),
+            })
+
+    ledger_only = [
+        _reconciliation_record_output(record)
+        for index, record in enumerate(ledger_records)
+        if index not in used_ledger_ids
+    ]
+    bank_only = [
+        _reconciliation_record_output(record)
+        for index, record in enumerate(bank_records)
+        if index not in matched_bank_ids
+    ]
+
+    bank_total = sum((record["amount"] for record in bank_records), Decimal("0"))
+    ledger_total = sum((record["amount"] for record in ledger_records), Decimal("0"))
+    total_difference = ledger_total - bank_total
+
+    return {
+        "status": "completed",
+        "record_type": "bank_reconciliation",
+        "bank_record_count": len(bank_records),
+        "ledger_record_count": len(ledger_records),
+        "first_record_count": len(first[1]),
+        "second_record_count": len(second[1]),
+        "match_count": len(matches),
+        "duplicate_count": len(duplicates),
+        "variance_count": len(variances),
+        "ledger_only_count": len(ledger_only),
+        "bank_only_count": len(bank_only),
+        "bank_total": float(bank_total),
+        "ledger_total": float(ledger_total),
+        "total_difference": float(total_difference),
+        "matches": matches,
+        "duplicates": duplicates,
+        "variances": variances,
+        "ledger_only": ledger_only,
+        "bank_only": bank_only,
+        "summary": (
+            f"\u0627\u0644\u062a\u0637\u0627\u0628\u0642\u0627\u062a: {len(matches)}\u060c "
+            f"\u0627\u0644\u0642\u064a\u0648\u062f\u0627\u0644\u0645\u0643\u0631\u0631\u0629: {len(duplicates)}\u060c "
+            f"\u0641\u0631\u0648\u0642\u0627\u0644\u0645\u0628\u0627\u0644\u063a: {len(variances)}\u060c "
+            f"\u0642\u064a\u0648\u062f\u0628\u0644\u0627\u062d\u0631\u0643\u0629\u0628\u0646\u0643\u064a\u0629: {len(ledger_only)}\u060c "
+            f"\u062d\u0631\u0643\u0627\u062a\u0628\u0646\u0643\u064a\u0629\u0628\u0644\u0627\u0642\u064a\u062f: {len(bank_only)}."
+        ),
+    }
 
 
 def compare_documents(first_path, second_path):

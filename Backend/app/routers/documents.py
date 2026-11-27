@@ -9,7 +9,7 @@ import uuid
 from ..database import get_db
 from ..models import Document, Invoice
 from ..models import DocumentAudit, DocumentAuditFinding
-from ..services.document_audit import audit_document, compare_documents
+from ..services.document_audit import audit_document, compare_documents, reconcile_uploaded_documents
 from ..config import settings
 router=APIRouter(prefix="/documents",tags=["المستندات"])
 
@@ -369,7 +369,9 @@ def compare_documents_endpoint(
         )
 
     try:
-        result = compare_documents(first_path, second_path)
+        result = reconcile_uploaded_documents(first_path, second_path)
+        if result is None:
+            result = compare_documents(first_path, second_path)
 
         return {
             "first_document": {

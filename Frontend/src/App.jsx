@@ -1789,6 +1789,84 @@ export default function App() {
                       </span>
                     </div>
 
+                    {documentCompareResult.record_type === "bank_reconciliation" && (
+                      <div className="document-reconciliation-results">
+                        <h3>ملخص التسوية البنكية</h3>
+                        <div className="document-audit-summary">
+                          <span><strong>إجمالي البنك:</strong> {Number(documentCompareResult.bank_total || 0).toLocaleString("en-US")}</span>
+                          <span><strong>إجمالي الدفتر:</strong> {Number(documentCompareResult.ledger_total || 0).toLocaleString("en-US")}</span>
+                          <span><strong>القيد المحاسبي:</strong> {Number(documentCompareResult.total_difference || 0).toLocaleString("en-US")}</span>
+                          <span><strong>المطابقات:</strong> {documentCompareResult.match_count}</span>
+                          <span><strong>الحركة البنكية:</strong> {documentCompareResult.duplicate_count}</span>
+                          <span><strong>فروق المبالغ:</strong> {documentCompareResult.variance_count}</span>
+                          <span><strong>قيود بلا حركة بنكية:</strong> {documentCompareResult.ledger_only_count}</span>
+                          <span><strong>حركات بلا قيد:</strong> {documentCompareResult.bank_only_count}</span>
+                        </div>
+
+                        {[
+                          {
+                            key: "duplicates",
+                            title: "القيود المحاسبية المكررة",
+                            records: documentCompareResult.duplicates,
+                            reference: (item) => item.reference,
+                            recordId: (item) => item.ledger_record?.record_id,
+                            amount: (item) => item.ledger_record?.amount,
+                            message: (item) => item.message,
+                          },
+                          {
+                            key: "variances",
+                            title: "اختلافات المبالغ",
+                            records: documentCompareResult.variances,
+                            reference: (item) => item.reference,
+                            recordId: (item) => item.ledger_record?.record_id,
+                            amount: (item) => item.difference,
+                            message: (item) => item.message,
+                          },
+                          {
+                            key: "ledger_only",
+                            title: "قيود في الدفتر دون حركة بنكية",
+                            records: documentCompareResult.ledger_only,
+                            reference: (item) => item.reference,
+                            recordId: (item) => item.record_id,
+                            amount: (item) => item.amount,
+                            message: () => "لا توجد حركة بنكية مقابلة لهذا القيد.",
+                          },
+                          {
+                            key: "bank_only",
+                            title: "حركات بنكية دون قيد محاسبي",
+                            records: documentCompareResult.bank_only,
+                            reference: (item) => item.reference,
+                            recordId: (item) => item.record_id,
+                            amount: (item) => item.amount,
+                            message: () => "لا يوجد قيد محاسبي مقابل لهذه الحركة.",
+                          },
+                        ].map((group) => (
+                          <section className="document-audit-findings" key={group.key}>
+                            <h3>{group.title} ({group.records?.length || 0})</h3>
+                            {group.records?.length ? group.records.map((item, index) => (
+                              <article className="document-audit-finding" key={`${group.key}-${index}`}>
+                                <p><strong>المرجع:</strong> {group.reference(item) || "—"}</p>
+                                <p><strong>رقم السجل:</strong> {group.recordId(item) || "—"}</p>
+                                <p><strong>المبلغ / الفرق:</strong> {Number(group.amount(item) || 0).toLocaleString("en-US")}</p>
+                                <p>{group.message(item)}</p>
+                              </article>
+                            )) : <p>لا توجد حالات في هذه الفئة.</p>}
+                          </section>
+                        ))}
+
+                        <h3>السجلات المتطابقة ({documentCompareResult.matches?.length || 0})</h3>
+                        <div className="document-audit-findings">
+                          {documentCompareResult.matches?.map((match) => (
+                            <article className="document-audit-finding" key={match.match_id}>
+                              <p><strong>المرجع:</strong> {match.matched_value || "—"}</p>
+                              <p><strong>القيد المحاسبي:</strong> {match.ledger_record?.record_id || "—"}</p>
+                              <p><strong>الحركة البنكية:</strong> {match.bank_record?.record_id || "—"}</p>
+                              <p><strong>المرجع:</strong> {Number(match.bank_record?.amount || 0).toLocaleString("en-US")}</p>
+                            </article>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                     {documentCompareResult.matches?.length > 0 ? (
                       <div className="document-audit-findings">
                         {documentCompareResult.matches.map((match) => (
@@ -1848,10 +1926,10 @@ export default function App() {
                                       };
 
                                       const firstRecord = flattenRecord(
-                                        match.first_record,
+                                        match.first_record ?? match.ledger_record,
                                       );
                                       const secondRecord = flattenRecord(
-                                        match.second_record,
+                                        match.second_record ?? match.bank_record,
                                       );
 
                                       const recordKeys = [
@@ -1896,9 +1974,9 @@ export default function App() {
                           </article>
                         ))}
                       </div>
-                    ) : (
+                    ) : documentCompareResult.record_type !== "bank_reconciliation" ? (
                       <p>لم يتم العثور على سجلات متطابقة بين المستندين.</p>
-                    )}
+                    ) : null}
                   </div>
                 )}
               </div>

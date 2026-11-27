@@ -1,4 +1,4 @@
-﻿
+
 from pathlib import Path
 from decimal import Decimal, InvalidOperation
 from datetime import date, datetime
@@ -1239,6 +1239,148 @@ def extract_journal_records(file_path: str | Path) -> list[dict]:
 
     return records
 
+
+
+def extract_expense_register_records(file_path: str | Path) -> list[dict]:
+    """Extract expense-register rows while preserving their control fields."""
+    file_path = Path(file_path)
+    extension = file_path.suffix.lower()
+
+    if extension == ".csv":
+        frame = pd.read_csv(
+            file_path, dtype=str, sep=None, engine="python",
+            encoding="utf-8-sig", header=None
+        ).fillna("")
+        sheets = [("CSV", frame)]
+    elif extension in {".xlsx", ".xls"}:
+        sheets = [
+            (name, frame.fillna(""))
+            for name, frame in pd.read_excel(
+                file_path, sheet_name=None, dtype=str, header=None
+            ).items()
+        ]
+    else:
+        return []
+
+    aliases = {
+        "journal_id": {
+            "\u0631\u0642\u0645 \u0627\u0644\u0642\u064a\u062f",
+            "\u0631\u0642\u0645 \u0627\u0644\u0642\u064a\u062f \u0627\u0644\u0645\u062d\u0627\u0633\u0628\u064a",
+        },
+        "invoice_number": {
+            "\u0631\u0642\u0645 \u0627\u0644\u0641\u0627\u062a\u0648\u0631\u0629",
+            "\u0631\u0642\u0645 \u0627\u0644\u0645\u0633\u062a\u0646\u062f",
+        },
+        "transaction_date": {
+            "\u062a\u0627\u0631\u064a\u062e \u0627\u0644\u0642\u064a\u062f",
+            "\u062a\u0627\u0631\u064a\u062e \u0627\u0644\u0639\u0645\u0644\u064a\u0629",
+        },
+        "entry_time": {
+            "\u0648\u0642\u062a \u0627\u0644\u0625\u062f\u062e\u0627\u0644",
+            "\u0648\u0642\u062a \u0627\u0644\u062a\u0633\u062c\u064a\u0644",
+        },
+        "beneficiary": {
+            "\u0627\u0633\u0645 \u0627\u0644\u0645\u0648\u0631\u062f / \u0627\u0644\u0645\u0633\u062a\u0641\u064a\u062f",
+            "\u0627\u0633\u0645 \u0627\u0644\u0645\u0648\u0631\u062f",
+            "\u0627\u0644\u0645\u0633\u062a\u0641\u064a\u062f",
+        },
+        "iban": {
+            "\u0631\u0642\u0645 \u0627\u0644\u062d\u0633\u0627\u0628 \u0627\u0644\u0628\u0646\u0643\u064a (iban)",
+            "\u0631\u0642\u0645 \u0627\u0644\u062d\u0633\u0627\u0628 \u0627\u0644\u0628\u0646\u0643\u064a",
+            "iban",
+        },
+        "description": {
+            "\u0627\u0644\u0628\u064a\u0627\u0646 / \u0627\u0644\u0648\u0635\u0641",
+            "\u0627\u0644\u0628\u064a\u0627\u0646",
+            "\u0627\u0644\u0648\u0635\u0641",
+        },
+        "cost_center": {"\u0645\u0631\u0643\u0632 \u0627\u0644\u062a\u0643\u0644\u0641\u0629"},
+        "amount": {
+            "\u0627\u0644\u0645\u0628\u0644\u063a",
+            "\u0642\u064a\u0645\u0629 \u0627\u0644\u0645\u0628\u0644\u063a",
+        },
+        "entered_by": {
+            "\u0627\u0644\u0645\u0648\u0638\u0641 \u0627\u0644\u0645\u062f\u062e\u0644",
+            "\u0645\u062f\u062e\u0644 \u0627\u0644\u0628\u064a\u0627\u0646\u0627\u062a",
+        },
+        "approved_by": {
+            "\u0627\u0644\u0645\u0639\u062a\u0645\u062f",
+            "\u0627\u0644\u0645\u0648\u0627\u0641\u0642",
+        },
+        "match_status": {
+            "\u062d\u0627\u0644\u0629 \u0627\u0644\u0645\u0637\u0627\u0628\u0642\u0629",
+        },
+    }
+
+    records = []
+    required = {"journal_id", "invoice_number", "beneficiary", "amount"}
+
+    for sheet_name, raw_frame in sheets:
+        header_index = None
+        selected = {}
+
+        for candidate_index in range(min(len(raw_frame), 30)):
+            column_lookup = {
+                normalize_label(str(value)): position
+                for position, value in enumerate(
+                    raw_frame.iloc[candidate_index].tolist()
+                )
+                if value is not None and str(value).strip()
+            }
+
+            candidate = {}
+            for field, names in aliases.items():
+                for alias in names:
+                    key = normalize_label(alias)
+                    if key in column_lookup:
+                        candidate[field] = column_lookup[key]
+                        break
+
+            if required.issubset(candidate):
+                header_index = candidate_index
+                selected = candidate
+                break
+
+        if header_index is None:
+            continue
+
+        for row_index in range(header_index + 1, len(raw_frame)):
+            row = raw_frame.iloc[row_index]
+
+            def cell(field):
+                position = selected.get(field)
+                if position is None:
+                    return ""
+                value = row.iloc[position]
+                if pd.isna(value):
+                    return ""
+                return normalize_text(str(value)).strip()
+
+            values = {field: cell(field) for field in aliases}
+
+            amount = parse_decimal(values["amount"])
+            if not any((
+                values["journal_id"],
+                values["invoice_number"],
+                values["beneficiary"],
+                amount is not None,
+            )):
+                continue
+            records.append({
+                "record_type": "expense_register",
+                "is_valid": bool(
+                    values["journal_id"]
+                    and values["invoice_number"]
+                    and values["beneficiary"]
+                    and amount is not None
+                ),
+                **values,
+                "amount": amount,
+                "source_sheet": str(sheet_name),
+                "source_row": int(row_index) + 1,
+            })
+
+    return records
 
 def extract_ledger_records(file_path: str | Path) -> list[dict]:
     """Extract bank ledger rows without treating them as invoices."""
